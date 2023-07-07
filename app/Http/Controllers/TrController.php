@@ -164,19 +164,21 @@ class TrController extends Controller
     //isi saldo iklan
     function put_trpuri(Request $request){
         $nominal = $request['trpurd']['nominal'];
-        $keterangan = $request['trpurd']['keterangan'];
+        $no_nota = $request['trpurd']['keterangan'];
+        $id_produk = $request['trpurd']['id_produk'];
+        $keterangan = $id_produk == -1 ? 'Saldo Iklan' : 'Pembelian Atk';
 
         $id = Trpurh::get_id();
 
         Trpurh::insert([
             'id' => $id,
-            'no_nota' => $keterangan,
-            'keterangan' => 'SALDO IKLAN',
+            'no_nota' => $no_nota,
+            'keterangan' => $keterangan,
         ]);
 
         Trpurd::insert([
             'id_purchase' => $id,
-            'id_produk' => -1,
+            'id_produk' => $id_produk,
             'qty' => 1,
             'hrg' => $nominal,
             'hrg_beli' => $nominal
