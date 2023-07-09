@@ -44,6 +44,30 @@ class UtController extends Controller
         return response()->json(array('status' => 200, 'dailysales' => array('labels' => $labels, 'data' => $data)));
     }
 
+    function get_utrptcash_flow(Request $request)
+    {
+        $periode = substr($request['periode_y'], -2) .substr('00' .$request['periode_m'], -2);
+        
+        $res = DB::table('v_rptcash_flow')
+            ->select('*')
+            ->where('periode', '=', $periode)
+            ->get();
+
+        return response()->json(array('status' => 200, 'report' => $res));
+    }
+
+    function get_utrptstok_rkp(Request $request)
+    {
+        $periode = substr($request['periode_y'], -2) .substr('00' .$request['periode_m'], -2);
+        
+        $res = DB::table('v_rptstok_rkp')
+            ->select('*')
+            ->where('periode', '=', $periode)
+            ->get();
+
+        return response()->json(array('status' => 200, 'report' => $res));
+    }
+
     function get_utresm(Request $request)
     {
         $res = DB::table('v_resume')
