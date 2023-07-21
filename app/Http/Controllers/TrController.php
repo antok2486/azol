@@ -81,13 +81,13 @@ class TrController extends Controller
 
         $res = DB::table('v_trpurc')
             ->select('*')
-            ->orderBy('id','desc')
+            ->orderBy('id', 'desc')
             ->offset($page)
             ->limit($limit)
             ->get();
 
         // get details
-        for($i=0; $i < count($res); $i++){
+        for ($i = 0; $i < count($res); $i++) {
             $id = $res[$i]->id;
 
             $res_detail = DB::table('trpurd')
@@ -98,7 +98,6 @@ class TrController extends Controller
 
             // $res[$i]->put('detail', $res_detail);   
             $res[$i]->detail = $res_detail;
-
         }
 
         return response()->json(array('status' => 200, 'trpurc' => $res));
@@ -113,16 +112,26 @@ class TrController extends Controller
             $limit = 20;
         }
 
+        $flag_harga = $request['flag_harga'];
+
+        $filter = '%';
+        if (isset($request['filter'])) {
+            $filter = $request['filter'];
+        }
+
         $res = DB::table('v_trsalh')
             ->select('*')
             // ->whereRaw("cast(id as char) like '" . $id . "' and nama like '%" . $filter . "%' ")
             // ->orderBy('id', 'desc')
+            ->where('flag_harga', '=', $flag_harga)
+            // ->where('keterangan', 'LIKE', $filter)
+            ->whereRaw("keterangan like '%" . $filter . "%'")
             ->offset($page)
             ->limit($limit)
             ->get();
 
         // get details
-        for($i=0; $i < count($res); $i++){
+        for ($i = 0; $i < count($res); $i++) {
             $id = $res[$i]->id;
 
             $res_detail = DB::table('trsald')
@@ -133,14 +142,30 @@ class TrController extends Controller
 
             // $res[$i]->put('detail', $res_detail);   
             $res[$i]->detail = $res_detail;
-
         }
 
         return response()->json(array('status' => 200, 'trsale' => $res));
     }
 
+    function get_trsale_valid(Request $request)
+    {
+        $res_h = DB::table('trsalh')
+            ->select('*')
+            ->where('id', '=', $request['id_sale'])
+            ->get();
+
+        $res_d = DB::table('trsald')
+            ->leftJoin('mpprod', 'trsald.id_produk', '=', 'mpprod.id')
+            ->select('trsald.*', 'mpprod.nama as nama_produk', 'mpprod.foto as foto', 'trsald.hrg_jual as hrg', 'trsald.hrg_jual as tot_hrg')
+            ->where('trsald.id_sale', '=', $request['id_sale'])
+            ->get();
+
+        return response()->json(array('status' => 200, 'trsalh' => $res_h, 'trsald' => $res_d));
+    }
+
     //isi saldo mitra shopee
-    function put_trpurd(Request $request){
+    function put_trpurd(Request $request)
+    {
         $nominal = $request['trpurd']['nominal'];
         $hrg_beli = $request['trpurd']['hrg_beli'];
 
@@ -162,7 +187,8 @@ class TrController extends Controller
     }
 
     //isi saldo iklan
-    function put_trpuri(Request $request){
+    function put_trpuri(Request $request)
+    {
         $nominal = $request['trpurd']['nominal'];
         $no_nota = $request['trpurd']['keterangan'];
         $id_produk = $request['trpurd']['id_produk'];
@@ -185,7 +211,8 @@ class TrController extends Controller
         ]);
     }
 
-    function put_trpurc(Request $request){
+    function put_trpurc(Request $request)
+    {
         $req_trpurh = $request['trpurh'];
         $req_trpurd = $request['trpurd'];
 
@@ -218,7 +245,8 @@ class TrController extends Controller
 
         Trsalh::insert([
             'id' => $id,
-            'flag_harga' => ($req_trsalh['flag_harga'] +1),
+            'flag_harga' => ($req_trsalh['flag_harga'] + 1),
+            'flag_valid' => $req_trsalh['flag_valid'],
             'keterangan' => $req_trsalh['keterangan'],
         ]);
 
@@ -234,7 +262,26 @@ class TrController extends Controller
         }
     }
 
-    function put_trsalp(Request $request){
+    function put_trsale_valid(Request $request)
+    {
+        $req_trsalh = $request['trsalh'];
+        $req_trsald = $request['trsald'];
+
+        Trsalh::where('id', '=', $req_trsalh[0]['id'])
+            ->update([
+                'flag_valid' => 1
+            ]);
+
+        for ($i = 0; $i < count($req_trsald); $i++) {
+            Trsald::where('id', '=', $req_trsald[$i]['id'])
+                ->update([
+                    'disc' => $req_trsald[$i]['disc']
+                ]);
+        }
+    }
+
+    function put_trsalp(Request $request)
+    {
         $keterangan = $request['trsalp']['keterangan'];
         $nominal = $request['trsalp']['nominal'];
         $hrg_beli = $request['trsalp']['hrg_beli'];
@@ -244,7 +291,7 @@ class TrController extends Controller
 
         Trsalh::insert([
             'id' => $id,
-            'keterangan' => $keterangan .' Nominal: ' .number_format($nominal,0,'.',','),
+            'keterangan' => $keterangan . ' Nominal: ' . number_format($nominal, 0, '.', ','),
         ]);
 
 
